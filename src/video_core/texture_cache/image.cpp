@@ -165,7 +165,7 @@ Image::Image(const Vulkan::Instance& instance_, Vulkan::Scheduler& scheduler_,
     const auto supported_samples =
         image_format_properties.result == vk::Result::eSuccess
             ? image_format_properties.value.imageFormatProperties.sampleCounts
-            : vk::SampleCountFlagBits::e1;
+            : vk::SampleCountFlagBits::e4;
 
     const vk::ImageCreateInfo image_ci = {
         .flags = flags,

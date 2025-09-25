@@ -407,7 +407,7 @@ void FsrPass::CreateImages(Img& img) const {
         },
         .mipLevels = 1,
         .arrayLayers = 1,
-        .samples = vk::SampleCountFlagBits::e1,
+        .samples = vk::SampleCountFlagBits::e4,
         // .tiling = vk::ImageTiling::eOptimal,
         .usage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eStorage,
         .initialLayout = vk::ImageLayout::eUndefined,
