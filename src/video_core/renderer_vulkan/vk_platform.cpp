@@ -130,7 +130,6 @@ std::vector<const char*> GetInstanceExtensions(Frontend::WindowSystemType window
     // Add the windowing system specific extension
     std::vector<const char*> extensions;
     extensions.reserve(7);
-    extensions.push_back(VK_EXT_LAYER_SETTINGS_EXTENSION_NAME);
 
     switch (window_type) {
     case Frontend::WindowSystemType::Headless:
