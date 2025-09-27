@@ -275,9 +275,7 @@ vk::UniqueInstance CreateInstance(Frontend::WindowSystemType window_type, bool e
 
     // Validation settings
     vk::Bool32 enable_sync = Config::vkValidationSyncEnabled() ? vk::True : vk::False;
-    vk::Bool32 enable_gpuav = Config::vkValidationSyncEnabled() ? vk::True : vk::False;
-    const char* gpuav_mode =
-        Config::vkValidationGpuEnabled() ? "GPU_BASED_GPU_ASSISTED" : "GPU_BASED_NONE";
+    vk::Bool32 enable_gpuav = Config::vkValidationGpuEnabled() ? vk::True : vk::False;
 
     // Crash diagnostics settings
     static const auto crash_diagnostic_path =
@@ -305,28 +303,7 @@ vk::UniqueInstance CreateInstance(Frontend::WindowSystemType window_type, bool e
         },
         vk::LayerSettingEXT{
             .pLayerName = VALIDATION_LAYER_NAME,
-            .pSettingName = "validate_gpu_based",
-            .type = vk::LayerSettingTypeEXT::eString,
-            .valueCount = 1,
-            .pValues = &gpuav_mode,
-        },
-        vk::LayerSettingEXT{
-            .pLayerName = VALIDATION_LAYER_NAME,
-            .pSettingName = "gpuav_reserve_binding_slot",
-            .type = vk::LayerSettingTypeEXT::eBool32,
-            .valueCount = 1,
-            .pValues = &enable_gpuav,
-        },
-        vk::LayerSettingEXT{
-            .pLayerName = VALIDATION_LAYER_NAME,
             .pSettingName = "gpuav_descriptor_checks",
-            .type = vk::LayerSettingTypeEXT::eBool32,
-            .valueCount = 1,
-            .pValues = &enable_gpuav,
-        },
-        vk::LayerSettingEXT{
-            .pLayerName = VALIDATION_LAYER_NAME,
-            .pSettingName = "gpuav_validate_indirect_buffer",
             .type = vk::LayerSettingTypeEXT::eBool32,
             .valueCount = 1,
             .pValues = &enable_gpuav,
