@@ -323,6 +323,10 @@ constexpr AmdGpu::Image ImageResource::GetSharp(const Info& info) const noexcept
             image = AmdGpu::Image::Null(true);
         }
     }
+    if (image.last_level == 0) {
+        image.last_level = 2;
+    }
+    image.type = std::to_underlying(AmdGpu::ImageType::Color2DMsaa);
     return image;
 }
 

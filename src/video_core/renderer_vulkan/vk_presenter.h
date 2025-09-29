@@ -83,6 +83,7 @@ public:
         const Libraries::VideoOut::BufferAttributeGroup& attribute, VAddr cpu_address) {
         vo_buffers_addr.emplace_back(cpu_address);
         auto desc = VideoCore::TextureCache::VideoOutDesc{attribute, cpu_address};
+        desc.info.num_samples = 4;// TODO config
         const auto image_id = texture_cache.FindImage(desc);
         auto& image = texture_cache.GetImage(image_id);
         image.usage.vo_surface = 1u;

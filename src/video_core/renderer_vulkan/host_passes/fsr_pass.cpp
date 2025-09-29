@@ -37,8 +37,8 @@ void FsrPass::Create(vk::Device device, VmaAllocator allocator, u32 num_images) 
         .addressModeV = vk::SamplerAddressMode::eClampToEdge,
         .addressModeW = vk::SamplerAddressMode::eClampToEdge,
         .maxAnisotropy = 1.0f,
-        .minLod = -1000.0f,
-        .maxLod = 1000.0f,
+        .minLod = 0,//-1000.0f,
+        .maxLod = 0,//1000.0f,
     }));
 
     std::array<vk::DescriptorSetLayoutBinding, 3> layoutBindings{{

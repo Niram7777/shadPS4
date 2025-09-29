@@ -255,7 +255,7 @@ Frame* Presenter::PrepareLastFrame() {
         vk::ImageMemoryBarrier2{.srcStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
                                 .srcAccessMask = vk::AccessFlagBits2::eColorAttachmentRead,
                                 .dstStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-                                .dstAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite,
+                                .dstAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite | vk::AccessFlagBits2::eColorAttachmentRead,
                                 .oldLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
                                 .newLayout = vk::ImageLayout::eGeneral,
                                 .image = frame->image,

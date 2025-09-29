@@ -68,7 +68,7 @@ ImageId TextureCache::GetNullImage(const vk::Format format) {
 
     ImageInfo info{};
     info.pixel_format = format;
-    info.type = AmdGpu::ImageType::Color2D;
+    info.type = AmdGpu::ImageType::Color2D;//Msaa
     info.tile_mode = AmdGpu::TileMode::Thin1DThin;
     info.num_bits = 32;
     info.UpdateSize();
@@ -362,6 +362,16 @@ std::tuple<ImageId, int, int> TextureCache::ResolveOverlap(const ImageInfo& imag
                 FreeImage(cache_image_id);
             }
             return {merged_image_id, -1, -1};
+        }
+
+        if (image_info.guest_size == 4 * tex_cache_image.info.guest_size &&
+            image_info.type == tex_cache_image.info.type &&
+             tex_cache_image.info.pixel_format == image_info.pixel_format) {
+            return {cache_image_id, -1, -1};
+        }
+
+        if (image_info.type == tex_cache_image.info.type && image_info.type == AmdGpu::ImageType::Color2DMsaa) {
+            return {cache_image_id, -1, -1};
         }
 
         UNREACHABLE_MSG("Encountered unresolvable image overlap with equal memory address.");

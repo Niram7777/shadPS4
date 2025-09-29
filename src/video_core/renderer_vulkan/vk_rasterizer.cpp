@@ -167,6 +167,116 @@ RenderState Rasterizer::PrepareRenderState(u32 mrt_mask) {
         state.width = std::min<u32>(state.width, std::max(image.info.size.width >> mip, 1u));
         state.height = std::min<u32>(state.height, std::max(image.info.size.height >> mip, 1u));
         state.num_layers = std::min<u32>(state.num_layers, image_view.info.range.extent.layers);
+
+        LOG_INFO(Render_Vulkan, "vkQueueSubmit ImageInfo retrieve w{} h{} s{} f{} ", state.width, state.height, desc.info.num_samples, (int)desc.info.pixel_format);
+
+        if (false && desc.info.num_samples == 1) {
+            //convert to msaa 4
+            auto& ca = image.image;
+
+            // Create Image
+            {
+                vk::ImageCreateInfo image_info{
+                    .imageType = vk::ImageType::e2D,
+                    .format = image.info.pixel_format,
+                    .extent{
+                        .width = state.width,
+                        .height = state.height,
+                        .depth = 1,
+                    },
+                    .mipLevels = 1,
+                    .arrayLayers = 1,
+                    .samples = vk::SampleCountFlagBits::e4,
+                    .tiling = vk::ImageTiling::eOptimal,
+                    .usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+                    .sharingMode = vk::SharingMode::eExclusive,
+                    .initialLayout = vk::ImageLayout::eUndefined,
+                };
+                ca.Create(image_info);
+                //auto ms_image = instance.GetDevice().createImage(image_info).value;
+                /*auto req = instance.GetDevice().getImageMemoryRequirements(ms_image);
+                vk::MemoryAllocateInfo alloc_info{
+                    .allocationSize = IM_MAX(v.min_allocation_size, req.size),
+                    .memoryTypeIndex =
+                        FindMemoryType(vk::MemoryPropertyFlagBits::eDeviceLocal, req.memoryTypeBits),
+                };
+                auto image_memory = instance.GetDevice().allocateMemory(alloc_info).value;
+                instance.GetDevice().bindImageMemory(ms_image, image_memory, 0);*/
+            }
+
+            vk::ImageViewCreateInfo info{
+                .image = ca,
+                .viewType = vk::ImageViewType::e2D,
+                .format = image.info.pixel_format,
+                .subresourceRange{
+                    .aspectMask = vk::ImageAspectFlagBits::eColor,
+                    .levelCount = 1,
+                    .layerCount = 1,
+                },
+            };
+
+            state.color_attachments[cb] = {
+                .imageView = instance.GetDevice().createImageView(info).value,
+                .imageLayout = vk::ImageLayout::eUndefined,
+                .loadOp = is_clear ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad,
+                .storeOp = vk::AttachmentStoreOp::eStore,
+                .clearValue =
+                    is_clear ? LiverpoolToVK::ColorBufferClearValue(col_buf) : vk::ClearValue{},
+            };
+
+            continue;
+#if 0
+
+            //if 1 sample skip
+
+            ScopeMarkerBegin(fmt::format("Resolve:RS4={:#x}:RS1={:#x}",
+                                         cb,
+                                         4));
+
+            VideoCore::SubresourceRange mrt0_range;
+            mrt0_range.base.layer = 0;
+            mrt0_range.extent.layers = 1;
+            image.Transit(vk::ImageLayout::eTransferSrcOptimal, vk::AccessFlagBits2::eTransferRead,
+                               mrt0_range);
+            //ca.Transit(vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits2::eTransferWrite,
+            //                   mrt1_range);
+
+
+            vk::ImageResolve region = {
+                .srcSubresource =
+                {
+                    .aspectMask = vk::ImageAspectFlagBits::eColor,
+                    .mipLevel = 0,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1,
+                },
+                .srcOffset = {0, 0, 0},
+                .dstSubresource =
+                {
+                    .aspectMask = vk::ImageAspectFlagBits::eColor,
+                    .mipLevel = 0,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1,
+                },
+            .dstOffset = {0, 0, 0},
+            .extent = {4, 4, 1},
+        };
+
+            scheduler.CommandBuffer().resolveImage(
+                ca, vk::ImageLayout::eTransferSrcOptimal,
+                ca, vk::ImageLayout::eTransferDstOptimal,
+                region);
+
+            ScopeMarkerEnd();
+
+        /* ReCreate the Image View:
+        {
+            // Create the Descriptor Set:
+            //bd->font_texture = AddTexture(bd->font_view, vk::ImageLayout::eShaderReadOnlyOptimal);
+        }*/
+#endif
+        }
+
         state.color_attachments[cb] = {
             .imageView = *image_view.image_view,
             .imageLayout = vk::ImageLayout::eUndefined,
@@ -761,7 +871,7 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
                               vk::AccessFlagBits2::eShaderRead |
                                   (image.info.props.is_depth
                                        ? vk::AccessFlagBits2::eDepthStencilAttachmentWrite
-                                       : vk::AccessFlagBits2::eColorAttachmentWrite),
+                                       : (vk::AccessFlagBits2::eColorAttachmentWrite| vk::AccessFlagBits2::eColorAttachmentRead)),
                               {});
             } else {
                 if (is_storage) {
@@ -844,7 +954,7 @@ void Rasterizer::BeginRendering(const GraphicsPipeline& pipeline, RenderState& s
             image.Transit(instance.IsAttachmentFeedbackLoopLayoutSupported()
                               ? vk::ImageLayout::eAttachmentFeedbackLoopOptimalEXT
                               : vk::ImageLayout::eGeneral,
-                          vk::AccessFlagBits2::eColorAttachmentWrite, {});
+                          (vk::AccessFlagBits2::eColorAttachmentWrite | vk::AccessFlagBits2::eColorAttachmentRead), {});
             attachment_feedback_loop = true;
         } else {
             image.Transit(vk::ImageLayout::eColorAttachmentOptimal,

@@ -748,7 +748,7 @@ static bool CreateFontsTexture() {
             },
             .mipLevels = 1,
             .arrayLayers = 1,
-            .samples = vk::SampleCountFlagBits::e1,
+            .samples = vk::SampleCountFlagBits::e4,//e1
             .tiling = vk::ImageTiling::eOptimal,
             .usage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst,
             .sharingMode = vk::SharingMode::eExclusive,
@@ -850,8 +850,8 @@ static bool CreateFontsTexture() {
                 .depth = 1,
             },
         };
-        bd->font_command_buffer.copyBufferToImage(upload_buffer, bd->font_image,
-                                                  vk::ImageLayout::eTransferDstOptimal, {region});
+        //bd->font_command_buffer.copyBufferToImage(upload_buffer, bd->font_image,
+        //                                          vk::ImageLayout::eTransferDstOptimal, {region});
 
         vk::ImageMemoryBarrier use_barrier[1]{{
             .srcAccessMask = vk::AccessFlagBits::eTransferWrite,
@@ -1032,7 +1032,7 @@ static void CreatePipeline(vk::Device device, const vk::AllocationCallbacks* all
     };
 
     vk::PipelineMultisampleStateCreateInfo ms_info{
-        .rasterizationSamples = vk::SampleCountFlagBits::e1,
+        .rasterizationSamples = vk::SampleCountFlagBits::e4,
     };
 
     vk::PipelineColorBlendAttachmentState color_attachment[1]{
@@ -1178,8 +1178,8 @@ bool CreateDeviceObjects() {
             .addressModeV = vk::SamplerAddressMode::eRepeat,
             .addressModeW = vk::SamplerAddressMode::eRepeat,
             .maxAnisotropy = 1.0f,
-            .minLod = -1000,
-            .maxLod = 1000,
+            .minLod = 0,//-1000,
+            .maxLod = 0,//1000,
         };
         bd->simple_sampler = CheckVkResult(v.device.createSampler(info, v.allocator));
     }

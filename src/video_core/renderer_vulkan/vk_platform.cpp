@@ -55,6 +55,10 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsCallback(
                 callback_data->pMessageIdName ? callback_data->pMessageIdName : "<null>",
                 callback_data->pMessage ? callback_data->pMessage : "<null>");
 
+    if (severity == vk::DebugUtilsMessageSeverityFlagBitsEXT::eError) {
+        std::terminate();
+    }
+
     return VK_FALSE;
 }
 

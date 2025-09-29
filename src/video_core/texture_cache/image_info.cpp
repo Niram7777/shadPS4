@@ -43,15 +43,18 @@ ImageInfo::ImageInfo(const Libraries::VideoOut::BufferAttributeGroup& group,
         props.is_tiled ? AmdGpu::TileMode::Display2DThin : AmdGpu::TileMode::DisplayLinearAligned;
     array_mode = AmdGpu::GetArrayMode(tile_mode);
     pixel_format = ConvertPixelFormat(attrib.pixel_format);
-    type = AmdGpu::ImageType::Color2D;
+    type = AmdGpu::ImageType::Color2DMsaa;
     size.width = attrib.width;
     size.height = attrib.height;
+    num_samples = 4;//TODO config
     pitch = attrib.tiling_mode == TilingMode::Linear ? size.width : (size.width + 127) & (~127);
     num_bits = attrib.pixel_format != VideoOutFormat::A16R16G16B16Float ? 32 : 64;
     ASSERT(num_bits == 32);
 
     guest_address = cpu_address;
     UpdateSize();
+
+    LOG_INFO(Render_Vulkan, "vkQueueSubmit ImageInfo1 w{} h{} s{} f{} ", size.width, size.height, num_samples, (int)pixel_format);
 }
 
 ImageInfo::ImageInfo(const AmdGpu::Liverpool::ColorBuffer& buffer,
@@ -60,9 +63,13 @@ ImageInfo::ImageInfo(const AmdGpu::Liverpool::ColorBuffer& buffer,
     tile_mode = buffer.GetTileMode();
     array_mode = AmdGpu::GetArrayMode(tile_mode);
     pixel_format = LiverpoolToVK::SurfaceFormat(buffer.GetDataFmt(), buffer.GetNumberFmt());
-    num_samples = buffer.NumSamples();
+    if (buffer.attrib.num_fragments_log2.Value() == 0) {
+        num_samples = 4;//
+    } else {
+        num_samples = buffer.NumSamples();
+    }
     num_bits = NumBitsPerBlock(buffer.GetDataFmt());
-    type = AmdGpu::ImageType::Color2D;
+    type = AmdGpu::ImageType::Color2DMsaa;
     size.width = hint.Valid() ? hint.width : buffer.Pitch();
     size.height = hint.Valid() ? hint.height : buffer.Height();
     size.depth = 1;
@@ -76,6 +83,8 @@ ImageInfo::ImageInfo(const AmdGpu::Liverpool::ColorBuffer& buffer,
     guest_size = color_slice_sz * buffer.NumSlices();
     mips_layout.emplace_back(guest_size, pitch, buffer.Height(), 0);
     alt_tile = Libraries::Kernel::sceKernelIsNeoMode() && buffer.info.alt_tile_mode;
+
+    LOG_INFO(Render_Vulkan, "vkQueueSubmit ImageInfo2 w{} h{} s{} f{} ", size.width, size.height, num_samples, (int)pixel_format);
 }
 
 ImageInfo::ImageInfo(const AmdGpu::Liverpool::DepthBuffer& buffer, u32 num_slices,
@@ -84,7 +93,7 @@ ImageInfo::ImageInfo(const AmdGpu::Liverpool::DepthBuffer& buffer, u32 num_slice
     tile_mode = buffer.GetTileMode();
     array_mode = AmdGpu::GetArrayMode(tile_mode);
     pixel_format = LiverpoolToVK::DepthFormat(buffer.z_info.format, buffer.stencil_info.format);
-    type = AmdGpu::ImageType::Color2D;
+    type = AmdGpu::ImageType::Color2DMsaa;
     props.is_tiled = buffer.IsTiled();
     props.is_depth = true;
     props.has_stencil =
@@ -105,6 +114,8 @@ ImageInfo::ImageInfo(const AmdGpu::Liverpool::DepthBuffer& buffer, u32 num_slice
     const auto depth_slice_sz = buffer.GetDepthSliceSize();
     guest_size = depth_slice_sz * num_slices;
     mips_layout.emplace_back(guest_size, pitch, buffer.Height(), 0);
+
+    LOG_INFO(Render_Vulkan, "vkQueueSubmit ImageInfo3 w{} h{} s{} f{} ", size.width, size.height, num_samples, (int)pixel_format);
 }
 
 ImageInfo::ImageInfo(const AmdGpu::Image& image, const Shader::ImageResource& desc) noexcept {
@@ -115,7 +126,8 @@ ImageInfo::ImageInfo(const AmdGpu::Image& image, const Shader::ImageResource& de
         pixel_format = LiverpoolToVK::PromoteFormatToDepth(pixel_format);
         props.is_depth = true;
     }
-    type = image.GetBaseType();
+    //type = image.GetBaseType();
+    type = AmdGpu::ImageType::Color2DMsaa;
     props.is_tiled = image.IsTiled();
     props.is_volume = type == AmdGpu::ImageType::Color3D;
     props.is_pow2 = image.pow2pad;
@@ -126,7 +138,7 @@ ImageInfo::ImageInfo(const AmdGpu::Image& image, const Shader::ImageResource& de
     pitch = image.Pitch();
     resources.levels = image.NumLevels();
     resources.layers = image.NumLayers();
-    num_samples = image.NumSamples();
+    num_samples = 4;//image.NumSamples();//4;//
     num_bits = NumBitsPerBlock(image.GetDataFmt());
     bank_swizzle = image.GetBankSwizzle();
 
@@ -134,6 +146,8 @@ ImageInfo::ImageInfo(const AmdGpu::Image& image, const Shader::ImageResource& de
 
     alt_tile = Libraries::Kernel::sceKernelIsNeoMode() && image.alt_tile_mode;
     UpdateSize();
+
+    LOG_INFO(Render_Vulkan, "vkQueueSubmit ImageInfo4 w{} h{} s{} f{} ", size.width, size.height, num_samples, (int)pixel_format);
 }
 
 bool ImageInfo::IsCompatible(const ImageInfo& info) const {

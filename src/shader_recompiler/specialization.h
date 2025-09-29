@@ -44,7 +44,7 @@ struct BufferSpecialization {
 };
 
 struct ImageSpecialization {
-    AmdGpu::ImageType type = AmdGpu::ImageType::Color2D;
+    AmdGpu::ImageType type = AmdGpu::ImageType::Color2D;//Color2DMsaa
     bool is_integer = false;
     bool is_storage = false;
     bool is_cube = false;

@@ -153,8 +153,8 @@ struct BitField {
         return Value() != 0;
     }
 
-private:
     StorageType storage;
+private:
 
     static_assert(bits + position <= 8 * sizeof(T), "Bitfield out of range");
 

@@ -302,7 +302,7 @@ void VideoOutDriver::PresentThread(std::stop_token token) {
             if (!request) {
                 if (timer.GetTotalWait().count() < 0) { // Dont draw too fast
                     if (!main_port.is_open) {
-                        DrawBlankFrame();
+                        //DrawBlankFrame();
                     } else if (ImGui::Core::MustKeepDrawing()) {
                         DrawLastFrame();
                     }

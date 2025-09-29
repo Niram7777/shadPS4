@@ -133,7 +133,11 @@ bool Swapchain::AcquireNextImage() {
     return !needs_recreation;
 }
 
+std::mutex g_mutex_present_queue;
+
 bool Swapchain::Present() {
+    LOG_INFO(Render_Vulkan, "vkQueueSubmit start f{} i{} present_ready {} swapchain {}",
+        frame_index, image_index, (void*)&present_ready[image_index], (void*)&swapchain);
 
     const vk::PresentInfoKHR present_info = {
         .waitSemaphoreCount = 1,
@@ -143,15 +147,22 @@ bool Swapchain::Present() {
         .pImageIndices = &image_index,
     };
 
-    auto result = instance.GetPresentQueue().presentKHR(present_info);
-    if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR) {
-        needs_recreation = true;
-    } else {
-        ASSERT_MSG(result == vk::Result::eSuccess, "Swapchain presentation failed: {}",
-                   vk::to_string(result));
+    {
+        std::lock_guard lm(g_mutex_present_queue);
+
+        auto result = instance.GetPresentQueue().presentKHR(present_info);
+
+        if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR) {
+            needs_recreation = true;
+        } else {
+            ASSERT_MSG(result == vk::Result::eSuccess, "Swapchain presentation failed: {}",
+                       vk::to_string(result));
+        }
     }
 
     frame_index = (frame_index + 1) % image_count;
+
+    LOG_INFO(Render_Vulkan, "vkQueueSubmit end f{} i{}", frame_index, image_index);
 
     return !needs_recreation;
 }

@@ -171,6 +171,16 @@ void Scheduler::SubmitExecution(SubmitInfo& info) {
         .pSignalSemaphores = info.signal_semas.data(),
     };
 
+    LOG_INFO(Render_Vulkan, "vkQueueSubmit {} waits ", info.wait_semas.size());
+    for (u32 i = 0; i < info.wait_semas.size(); ++i) {
+        LOG_INFO(Render_Vulkan, "vkQueueSubmit wait {}", (void*) VkSemaphore(info.wait_semas[i]));
+    }
+
+    LOG_INFO(Render_Vulkan, "vkQueueSubmit {} signals ", info.signal_semas.size());
+    for (u32 i = 0; i < info.signal_semas.size(); ++i) {
+        LOG_INFO(Render_Vulkan, "vkQueueSubmit signal {}", (void*) info.signal_semas[i]);
+    }
+
     ImGui::Core::TextureManager::Submit();
 
     {

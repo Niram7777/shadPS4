@@ -104,6 +104,10 @@ vk::Pipeline TileManager::GetTilingPipeline(const ImageInfo& info, bool is_tiler
         return pipeline;
     }
 
+    if (info.num_samples != 4) {
+        LOG_WARNING(Render_Vulkan, "NUM_SAMPLES info.num_samples {}", info.num_samples);
+    }
+
     const auto device = instance.GetDevice();
     const auto micro_tile_mode = AmdGpu::GetMicroTileMode(info.tile_mode);
     std::vector<std::string> defines = {

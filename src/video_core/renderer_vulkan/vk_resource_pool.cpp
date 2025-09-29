@@ -99,6 +99,7 @@ void CommandPool::Allocate(std::size_t begin, std::size_t end) {
 
 vk::CommandBuffer CommandPool::Commit() {
     const std::size_t index = CommitResource();
+    LOG_INFO(Render_Vulkan, "vkQueueSubmit cmd index {}", index);
     return cmd_buffers[index];
 }
 

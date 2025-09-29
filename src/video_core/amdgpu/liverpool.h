@@ -954,7 +954,9 @@ struct Liverpool {
         }
 
         u32 NumSamples() const {
-            return 1 << attrib.num_fragments_log2;
+            //if ((attrib.num_fragments_log2.Value() % 32U) == 14) return 4;
+
+            return 1U << attrib.num_fragments_log2;
         }
 
         u32 NumSlices() const {
@@ -1489,20 +1491,31 @@ struct Liverpool {
             // It seems that the number of samples > 1 set in the AA config doesn't mean we're
             // always rendering with MSAA, so we need to derive MS ratio from the CB and DB
             // settings.
-            u32 num_samples = 1u;
+            u32 num_samples = 0u;
             if (color_control.mode != ColorControl::OperationMode::Disable) {
                 for (auto cb = 0u; cb < NumColorBuffers; ++cb) {
                     const auto& col_buf = color_buffers[cb];
                     if (!col_buf) {
                         continue;
                     }
-                    num_samples = std::max(num_samples, col_buf.NumSamples());
+                    auto ns = col_buf.attrib.num_fragments_log2.Value();//num_samples_log2?
+                    if (ns != 0) {
+                        num_samples = std::max(num_samples, col_buf.NumSamples());
+                    }
+                    LOG_WARNING(Render_Vulkan, "col_buf frag: {} shift: {} bit: {}",
+                        col_buf.attrib.num_fragments_log2.storage,
+                        col_buf.NumSamples(),
+                        col_buf.attrib.num_fragments_log2.Value());
+                    LOG_WARNING(Render_Vulkan, "col_buf sample: {} shift: {} bit: {}",
+                        col_buf.attrib.num_samples_log2.storage,
+                        1 << col_buf.attrib.num_samples_log2,
+                        col_buf.attrib.num_samples_log2.Value());
                 }
             }
             if (depth_buffer.DepthValid() || depth_buffer.StencilValid()) {
                 num_samples = std::max(num_samples, depth_buffer.NumSamples());
             }
-            return num_samples;
+            return 4;//num_samples ? num_samples : 4u;
         }
 
         bool IsClipDisabled() const {
