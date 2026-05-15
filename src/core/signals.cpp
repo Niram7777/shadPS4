@@ -49,7 +49,23 @@ static LONG WINAPI SignalHandler(EXCEPTION_POINTERS* pExp) noexcept {
         break;
     }
 
-    return handled ? EXCEPTION_CONTINUE_EXECUTION : EXCEPTION_CONTINUE_SEARCH;
+    DWORD code = 0;
+    PVOID address = nullptr;
+
+    if (pExp != nullptr && pExp->ExceptionRecord != nullptr) {
+        code = pExp->ExceptionRecord->ExceptionCode;
+        address = pExp->ExceptionRecord->ExceptionAddress;
+    }
+
+    if (handled) {
+    LOG_CRITICAL(Debug, "Handled Exception code {} at {}", code, address);
+        return EXCEPTION_CONTINUE_EXECUTION;
+    }
+
+    LOG_CRITICAL(Debug, "Unhandled Exception code {} at {}", code, address);
+    Common::Log::Flush();
+
+    return EXCEPTION_CONTINUE_SEARCH;
 }
 
 #else
